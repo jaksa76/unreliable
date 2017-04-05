@@ -13,15 +13,10 @@ public class Unreliable {
      * @param r the action to perform
      */
     public static void keepTrying(Runnable r) {
-        boolean success = true;
-        do {
-            try {
-                r.run();
-                return;
-            } catch (Exception e) {
-                success = false;
-            }
-        } while (!success);
+        keepTrying(() -> {
+            r.run();
+            return true; // return anything
+        });
     }
 
 
@@ -68,20 +63,10 @@ public class Unreliable {
      * @throws RuntimeException if the action fails the specified number of times.
      */
     public static void tenaciusly(Runnable r, int times) {
-        boolean success = true;
-        int tries = 0;
-        Exception lastException = null;
-        do {
-            try {
-                tries++;
-                r.run();
-                return;
-            } catch (Exception e) {
-                success = false;
-                lastException = e;
-            }
-        } while (!success && tries < times);
-        throw new RuntimeException("Tried " + tries + ", but failed: " + lastException.getMessage(), lastException);
+        tenaciusly(() -> {
+            r.run();
+            return true; // return anything
+        }, times);
     }
 
 
