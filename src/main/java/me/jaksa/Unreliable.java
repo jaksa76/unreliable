@@ -28,7 +28,11 @@ public class Unreliable {
     /**
      * Tries to retrieve a value until no exception is thrown.
      *
+     * @param <T> the type of the return value
+     *
      * @param s the function to evaluate
+     *
+     * @return the value retunred by the function
      */
     public static <T> T keepTrying(Supplier<T> s) {
         boolean success = true;
@@ -59,6 +63,8 @@ public class Unreliable {
      *
      * @param r the action to perform
      *
+     * @param times the number of times to retry
+     *
      * @throws RuntimeException if the action fails the specified number of times.
      */
     public static void tenaciusly(Runnable r, int times) {
@@ -82,7 +88,11 @@ public class Unreliable {
     /**
      * Tries to retrieve a value up to three times until no exception is thrown.
      *
+     * @param <T> the type of the return value
+     *
      * @param s the function to evaluate
+     *
+     * @return the value retunred by the function
      *
      * @throws RuntimeException if the function fails three times.
      */
@@ -94,7 +104,13 @@ public class Unreliable {
     /**
      * Tries to retrieve a value up to the specified number of times until no exception is thrown.
      *
+     * @param <T> the type of the return value
+     *
      * @param s the function to evaluate
+     *
+     * @param times the number of times to retry
+     *
+     * @return the value retunred by the function
      *
      * @throws RuntimeException if the function fails the specified number of times.
      */

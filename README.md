@@ -1,4 +1,4 @@
-# unreliable
+# Unreliable
 A set of utility methods to deal with unreliable components.
 
 # Guide
