@@ -1,5 +1,7 @@
 package me.jaksa;
 
+import java.io.IOException;
+
 public class UnreliableService {
 
     int tries;
@@ -14,14 +16,14 @@ public class UnreliableService {
         this.timesForSuccess = timesForSuccess;
     }
 
-    public void doSomething() {
+    public void doSomething() throws Exception {
         tries++;
         if (tries < timesForSuccess) throw new RuntimeException("Oops, I failed again.");
 
         success = true;
     }
 
-    public String getSomething() {
+    public String getSomething() throws Exception {
         tries++;
         if (tries < timesForSuccess) throw new RuntimeException("Oops, I failed again.");
 

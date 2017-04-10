@@ -12,7 +12,7 @@ public class Unreliable {
      *
      * @param r the action to perform
      */
-    public static void keepTrying(Runnable r) {
+    public static void keepTrying(RunnableWithException r) {
         keepTrying(() -> {
             r.run();
             return true; // return anything
@@ -29,7 +29,7 @@ public class Unreliable {
      *
      * @return the value retunred by the function
      */
-    public static <T> T keepTrying(Supplier<T> s) {
+    public static <T> T keepTrying(SupplierWithException<T> s) {
         boolean success = true;
         do {
             try {
@@ -48,7 +48,7 @@ public class Unreliable {
      *
      * @throws RuntimeException if the action fails three times.
      */
-    public static void tenaciusly(Runnable r) {
+    public static void tenaciusly(RunnableWithException r) {
         tenaciusly(r, 3);
     }
 
@@ -62,7 +62,7 @@ public class Unreliable {
      *
      * @throws RuntimeException if the action fails the specified number of times.
      */
-    public static void tenaciusly(Runnable r, int times) {
+    public static void tenaciusly(RunnableWithException r, int times) {
         tenaciusly(() -> {
             r.run();
             return true; // return anything
@@ -81,7 +81,7 @@ public class Unreliable {
      *
      * @throws RuntimeException if the function fails three times.
      */
-    public static <T> T tenaciusly(Supplier<T> s) {
+    public static <T> T tenaciusly(SupplierWithException<T> s) {
         return tenaciusly(s, 3);
     }
 
@@ -99,7 +99,7 @@ public class Unreliable {
      *
      * @throws RuntimeException if the function fails the specified number of times.
      */
-    public static <T> T tenaciusly(Supplier<T> s, int times) {
+    public static <T> T tenaciusly(SupplierWithException<T> s, int times) {
         boolean success = true;
         int tries = 0;
         Exception lastException = null;

@@ -89,6 +89,7 @@ public class UnreliableTest {
         Assert.assertEquals(100, service.tries);
     }
 
+
     @Test
     public void testExample() throws Exception {
         UnreliableService unreliableService = new UnreliableService();
