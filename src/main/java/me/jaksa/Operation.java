@@ -36,7 +36,7 @@ public class Operation {
 
 
     /**
-     * Specify the rollback for this operation. Rollback will be perform after every unsuccessful attempt.
+     * Specify the rollback for this operation. Rollback will be performed after every unsuccessful attempt.
      * The rollback should never throw an exception.
      *
      * @param rollback the {@link Runnable} to perform in order to rollback any changes from the operation
@@ -86,7 +86,7 @@ public class Operation {
     }
 
 
-    public int getRetries() {
+    int getRetries() {
         return retries;
     }
 

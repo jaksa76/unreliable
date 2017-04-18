@@ -1,5 +1,6 @@
 package me.jaksa;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -117,7 +118,7 @@ public class Unreliable {
 
 
     /**
-     * Builds an {@link Operation}. Alternatively you can use the {@link Operation#Operation(RunnableWithException)} constructor.
+     * Builds an {@link Operation} that can have a rollback and/or a commit.
      *
      * @param r the operation to perform
      * @return the {@link Operation} object for chaining modifiers
@@ -156,5 +157,43 @@ public class Unreliable {
         for (Operation operation : operations) {
             operation.performCommit();
         }
+    }
+
+
+    /**
+     * Builds a {@link Function} that can have a rollback and/or a commit.
+     *
+     * @param function
+     * @param <T>
+     * @return
+     */
+    public static <T> Function<T> function(SupplierWithException<T> function) {
+        return new Function<T>(function);
+    }
+
+
+    /**
+     * Tries to evaluate a {@link Function}, retrying each one several times in case of failures.
+     * {@link Function}s can have defined rollbacks and commits, number of retries etc.
+     *
+     * @param function the function to evaluate
+     */
+    public static <T> T tenaciouslyEvaluate(Function<T> function) {
+        T result;
+        try {
+            result = tenaciusly(() -> {
+                try {
+                    return function.evaluate();
+                } catch (Exception e) {
+                    function.performRollback();
+                    throw e;
+                }
+            }, function.getRetries());
+        } catch (Exception e) {
+            function.performRollback();
+            throw new RuntimeException(e);
+        }
+        function.performCommit();
+        return result;
     }
 }
