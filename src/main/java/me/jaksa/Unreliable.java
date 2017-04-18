@@ -112,6 +112,49 @@ public class Unreliable {
                 lastException = e;
             }
         } while (!success && tries < times);
-        throw new RuntimeException("Tried " + tries + ", but failed: " + lastException.getMessage(), lastException);
+        throw new RuntimeException("Tried " + tries + " times, but failed: " + lastException.getMessage(), lastException);
+    }
+
+
+    /**
+     * Builds an {@link Operation}. Alternatively you can use the {@link Operation#Operation(RunnableWithException)} constructor.
+     *
+     * @param r the operation to perform
+     * @return the {@link Operation} object for chaining modifiers
+     */
+    public static Operation operation(RunnableWithException r) {
+        return new Operation(r);
+    }
+
+
+    /**
+     * Tries to perform one or more {@link Operation}s, retrying each one several times in case of failures.
+     * {@link Operation}s can have defined rollbacks and commits, number of retries etc.
+     *
+     * @param operations the operations to perform
+     */
+    public static void tenaciouslyPerform(Operation... operations) {
+        int operationsToRollback = 0;
+        try {
+            for (Operation operation : operations) {
+                tenaciusly(() -> {
+                    try {
+                        operation.run();
+                    } catch (Exception e) {
+                        operation.performRollback();
+                        throw e;
+                    }
+                }, operation.getRetries());
+                operationsToRollback++;
+            }
+        } catch (Exception e) {
+            for (int i = 0; i < operationsToRollback; i++) {
+                operations[i].performRollback();
+            }
+            throw new RuntimeException(e);
+        }
+        for (Operation operation : operations) {
+            operation.performCommit();
+        }
     }
 }
