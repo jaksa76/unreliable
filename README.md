@@ -1,7 +1,7 @@
 # Unreliable
 A set of utility methods to deal with unreliable components.
 
-# Guide
+## Guide
 
 ```java
         // this will try to invoke the service 5 times
@@ -24,3 +24,7 @@ A set of utility methods to deal with unreliable components.
         // or keep trying an infinite number of times
         Unreliable.keepTrying(() -> unreliableService.doSomething());
 ```
+
+
+## Lightweight Transactions
+

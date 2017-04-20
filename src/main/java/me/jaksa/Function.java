@@ -1,5 +1,6 @@
 package me.jaksa;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -8,10 +9,12 @@ import java.util.function.Supplier;
  */
 public class Function<T> {
     private SupplierWithException<T> function;
-    private Runnable rollback;
-    private Runnable commit;
+    private Consumer<T> rollback;
+    private Consumer<T> commit;
     private java.util.function.Function<T, Boolean> verification;
     private int retries = 3;
+    private T lastResult;
+    private Runnable rollbackRunnable;
 
     /**
      * Constructs a potentially unreliable function that can have a rollback and a commit.
@@ -20,19 +23,34 @@ public class Function<T> {
      */
     public Function(SupplierWithException<T> function) {
         this.function = function;
-        this.rollback = () -> {};
-        this.commit = () -> {};
+        this.rollback = result -> {};
+        rollbackRunnable = () -> {};
+        this.commit = result -> {};
         this.verification = result -> true;
     }
 
     /**
-     * Alias for {@link #withRollback(Runnable)}
+     * Alias for {@link #withRollback(Consumer)}
      *
      * @param rollback the {@link Runnable} to perform in order to rollback any side effects of the function
      * @return the function for chaining other invocations
      */
-    public Function<T> withReset(Runnable rollback) {
+    public Function<T> withReset(Consumer<T> rollback) {
         return withRollback(rollback);
+    }
+
+
+    /**
+     * Specify the rollback for this function. Rollback will be performed after every unsuccessful attempt.
+     * The rollback should never throw an exception. The rollback will receive null if an exception has been
+     * thrown or the last value if the function failed during verification.
+     *
+     * @param rollback the {@link Consumer} to perform in order to rollback any side effects of the function
+     * @return the function for chaining other invocations
+     */
+    public Function<T> withRollback(Consumer<T> rollback) {
+        this.rollback = rollback;
+        return this;
     }
 
 
@@ -44,7 +62,7 @@ public class Function<T> {
      * @return the function for chaining other invocations
      */
     public Function<T> withRollback(Runnable rollback) {
-        this.rollback = rollback;
+        this.rollbackRunnable = rollback;
         return this;
     }
 
@@ -53,10 +71,10 @@ public class Function<T> {
      * Specify the commit for this function. Commit will be performed only after a successful attempt.
      * The commit should never throw an exception.
      *
-     * @param commit the {@link Runnable} to perform in order to commit any side effects of this function
+     * @param commit the {@link Consumer} to perform in order to commit any side effects of this function
      * @return the function for chaining other invocations
      */
-    public Function<T> withCommit(Runnable commit) {
+    public Function<T> withCommit(Consumer<T> commit) {
         this.commit = commit;
         return this;
     }
@@ -92,19 +110,21 @@ public class Function<T> {
 
 
     void performRollback() {
-        rollback.run();
+        rollback.accept(lastResult);
+        rollbackRunnable.run();
     }
 
 
     void performCommit() {
-        commit.run();
+        commit.accept(lastResult);
     }
 
 
     T evaluate() throws Exception {
-        T result = function.get();
-        if (!verification.apply(result)) throw new RuntimeException("Verification failed.");
-        return result;
+        lastResult = null;
+        lastResult = function.get();
+        if (!verification.apply(lastResult)) throw new RuntimeException("Verification failed.");
+        return lastResult;
     }
 
 }

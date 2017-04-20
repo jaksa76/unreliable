@@ -2,8 +2,8 @@ package me.jaksa;
 
 import org.junit.Test;
 
-import static me.jaksa.Unreliable.operation;
-import static me.jaksa.Unreliable.tenaciouslyPerform;
+import static me.jaksa.Transactions.perform;
+import static me.jaksa.Transactions.atomically;
 import static org.junit.Assert.*;
 
 public class OperationTest {
@@ -12,14 +12,14 @@ public class OperationTest {
         String[] statuses = new String[] { "init", "init", "init" };
 
         try {
-            tenaciouslyPerform(
-                    operation(() -> statuses[0] = "ready")
+            atomically(
+                    perform(() -> statuses[0] = "ready")
                             .withRollback(() -> statuses[0] = "rolled back")
                             .withCommit(() -> statuses[0] = "committed"),
-                    operation(() -> statuses[1] = "ready")
+                    perform(() -> statuses[1] = "ready")
                             .withRollback(() -> statuses[1] = "rolled back")
                             .withCommit(() -> statuses[1] = "committed"),
-                    operation(() -> throwException())
+                    perform(() -> throwException())
                             .withRollback(() -> statuses[2] = "rolled back")
                             .withCommit(() -> statuses[2] = "committed")
             );
@@ -39,8 +39,8 @@ public class OperationTest {
         UnreliableService service = new UnreliableService();
         String[] statuses = new String[] { "init" };
 
-        tenaciouslyPerform(
-                operation(() -> {
+        atomically(
+                perform(() -> {
                     if (!statuses[0].equals("init")) throwException("not rolled back");
                     service.doSomething();
                     statuses[0] = "ready";
@@ -52,8 +52,8 @@ public class OperationTest {
     public void testVerification() throws Exception {
         int[] counters = new int[] { 0 };
 
-        tenaciouslyPerform(
-                operation(() -> counters[0]++)
+        atomically(
+                perform(() -> counters[0]++)
                 .withVerification(() -> counters[0] > 2)
         );
 
@@ -68,14 +68,14 @@ public class OperationTest {
 
         int[] counters = new int[] { 0, 0, 0 };
 
-        tenaciouslyPerform(
-                operation(() -> service1.doSomething())
+        atomically(
+                perform(() -> service1.doSomething())
                         .withVerification(() -> counters[0] + counters[1] + counters[2] == 0)
                         .withCommit(() -> counters[0]++),
-                operation(() -> service2.doSomething())
+                perform(() -> service2.doSomething())
                         .withVerification(() -> counters[0] + counters[1] + counters[2] == 0)
                         .withCommit(() -> counters[1]++),
-                operation(() -> service3.doSomething())
+                perform(() -> service3.doSomething())
                         .withVerification(() -> counters[0] + counters[1] + counters[2] == 0)
                         .withCommit(() -> counters[2]++)
         );
@@ -89,8 +89,8 @@ public class OperationTest {
         int[] counters = new int[] { 0 };
 
         try {
-            tenaciouslyPerform(
-                    operation(() -> {
+            atomically(
+                    perform(() -> {
                         counters[0]++;
                         service.doSomething();
                     }).retry(6));
@@ -110,16 +110,16 @@ public class OperationTest {
 
         int[] counters = new int[] { 0, 0, 0 };
 
-        tenaciouslyPerform(
-                operation(() -> {
+        atomically(
+                perform(() -> {
                     counters[0]++;
                     service1.doSomething();
                 }).retry(3),
-                operation(() -> {
+                perform(() -> {
                     counters[1]++;
                     service2.doSomething();
                 }).retry(4),
-                operation(() -> {
+                perform(() -> {
                     counters[2]++;
                     service3.doSomething();
                 }).retry(5)
