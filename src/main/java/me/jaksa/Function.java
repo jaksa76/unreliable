@@ -9,12 +9,15 @@ import java.util.function.Supplier;
  */
 public class Function<T> {
     private SupplierWithException<T> function;
+    private FunctionWithException<?, T> functionWithArgument;
     private Consumer<T> rollback;
     private Consumer<T> commit;
     private java.util.function.Function<T, Boolean> verification;
     private int retries = 3;
     private T lastResult;
     private Runnable rollbackRunnable;
+    Function<?> previous;
+    Object resultOfPrevious;
 
     /**
      * Constructs a potentially unreliable function that can have a rollback and a commit.
@@ -23,6 +26,21 @@ public class Function<T> {
      */
     public Function(SupplierWithException<T> function) {
         this.function = function;
+        this.rollback = result -> {};
+        rollbackRunnable = () -> {};
+        this.commit = result -> {};
+        this.verification = result -> true;
+    }
+
+
+    /**
+     * Constructs a potentially unreliable function that can have a rollback and a commit.
+     *
+     * @param function the function to evaluate.
+     */
+    public <I> Function(FunctionWithException<I, T> function, Function<I> previous) {
+        this.functionWithArgument = function;
+        this.previous = previous;
         this.rollback = result -> {};
         rollbackRunnable = () -> {};
         this.commit = result -> {};
@@ -104,6 +122,11 @@ public class Function<T> {
     }
 
 
+    public <R> Function<R> then(FunctionWithException<T, R> f) {
+        return (Function<R>) new Function(f, this);
+    }
+
+
     int getRetries() {
         return retries;
     }
@@ -122,9 +145,13 @@ public class Function<T> {
 
     T evaluate() throws Exception {
         lastResult = null;
-        lastResult = function.get();
+        lastResult = previous == null ? function.get() : functionWithArgument.apply(getResultOfPrevious());
         if (!verification.apply(lastResult)) throw new RuntimeException("Verification failed.");
         return lastResult;
     }
 
+
+    <T> T getResultOfPrevious() {
+        return (T) resultOfPrevious;
+    }
 }

@@ -68,21 +68,53 @@ public class Transactions {
      * @param function the function to evaluate
      */
     public static <T> T atomically(Function<T> function) {
-        T result;
-        try {
-            result = Unreliable.tenaciusly(() -> {
-                try {
-                    return function.evaluate();
-                } catch (Exception e) {
-                    function.performRollback();
-                    throw e;
-                }
-            }, function.getRetries());
-        } catch (Exception e) {
-            function.performRollback();
-            throw new RuntimeException(e);
-        }
-        function.performCommit();
+        T result = prepareAll(function);
+        commitAll(function);
         return result;
+    }
+
+
+    /**
+     * Either prepares the function and all its predecessors or throws an exception rolling back
+     * the function and all it's predecessors.
+     */
+    private static <R, T> T prepareAll(Function<T> f) {
+        if (f.previous == null) return prepare(f);
+
+        f.resultOfPrevious = prepareAll(f.previous);
+
+        try {
+            return prepare(f);
+        } catch (Exception e) {
+            rollbackAll(f.previous);
+            throw e;
+        }
+    }
+
+
+    /**
+     * Either prepares this function of rolls back throwing an exception
+     */
+    private static <T> T prepare(Function<T> function) {
+        return Unreliable.tenaciusly(() -> {
+            try {
+                return function.evaluate();
+            } catch (Exception e) {
+                function.performRollback();
+                throw e;
+            }
+        }, function.getRetries());
+    }
+
+
+    private static <R> void rollbackAll(Function<R> f) {
+        if (f.previous != null) rollbackAll(f.previous);
+        f.performRollback();
+    }
+
+
+    private static <T> void commitAll(Function<T> f) {
+        if (f.previous != null) commitAll(f.previous);
+        f.performCommit();
     }
 }

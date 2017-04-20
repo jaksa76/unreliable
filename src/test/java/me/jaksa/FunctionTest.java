@@ -91,6 +91,76 @@ public class FunctionTest {
         assertEquals(6, counters[0]);
     }
 
+    @Test
+    public void testChainingResults() throws Exception {
+        UnreliableService service1 = new UnreliableService();
+        UnreliableService service2 = new UnreliableService();
+
+        atomically(evaluate(() -> service1.getSomething())
+                .then(r -> {
+                    assertEquals("Success!", r);
+                    return service2.getSomething();
+                }));
+    }
+
+
+    @Test
+    public void testAllFunctionsAreRolledBack() throws Exception {
+        int[] counters = new int[] { 0, 0, 0 };
+
+        try {
+            atomically(evaluate(() -> counters[0]++)
+                .withRollback(() -> counters[0]--)
+                .then(lastCounter -> counters[1]++)
+                .withRollback(() -> counters[1]--)
+                .then(lastCounter -> throwException()));
+        } catch (Exception e) {} // this is ok
+
+        assertEquals(0, counters[0]);
+        assertEquals(0, counters[1]);
+        assertEquals(0, counters[2]);
+    }
+
+    @Test
+    public void testAllFunctionsAreComitted() throws Exception {
+        int[] counters = new int[] { 0, 0, 0 };
+
+        try {
+            atomically(evaluate(() -> counters[0]++)
+                    .withRollback(() -> counters[0]--)
+                    .withCommit(value -> counters[0]++)
+                    .then(lastCounter -> counters[1]++)
+                    .withRollback(() -> counters[1]--)
+                    .withCommit(value -> counters[1]++)
+                    .then(lastCounter -> counters[2]++)
+                    .withRollback(() -> counters[2]--)
+                    .withCommit(value -> counters[2]++));
+        } catch (Exception e) {} // this is ok
+
+        assertEquals(2, counters[0]);
+        assertEquals(2, counters[1]);
+        assertEquals(2, counters[2]);
+    }
+
+    @Test
+    public void testOnlyPreparedFunctionsAreRolledBack() throws Exception {
+        int[] counters = new int[] { 0, 0, 0 };
+
+        try {
+            atomically(evaluate(() -> counters[0]++)
+                    .withRollback(() -> counters[0]--)
+                    .withCommit(value -> counters[0]++)
+                    .then(lastCounter -> throwException())
+                    .withCommit(value -> counters[1]++)
+                    .then(lastCounter -> counters[2]++)
+                    .withRollback(() -> counters[2]--)
+                    .withCommit(value -> counters[2]++));
+        } catch (Exception e) {} // this is ok
+
+        assertEquals(0, counters[0]);
+        assertEquals(0, counters[1]);
+        assertEquals(0, counters[2]);
+    }
 
     private boolean throwException() {
         return throwException("Boom");
