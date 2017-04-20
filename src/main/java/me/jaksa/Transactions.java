@@ -10,75 +10,78 @@ package me.jaksa;
  */
 public class Transactions {
     /**
-     * Builds an {@link Operation} that can have a rollback and/or a commit.
+     * Builds an {@link VoidTransaction} that can have a rollback and/or a commit.
      *
      * @param r the operation to perform
-     * @return the {@link Operation} object for chaining modifiers
+     * @return the {@link VoidTransaction} object for chaining modifiers
      */
-    public static Operation perform(RunnableWithException r) {
-        return new Operation(r);
+    public static VoidTransaction perform(RunnableWithException r) {
+        return new VoidTransaction(r);
     }
 
+
     /**
-     * Tries to perform one or more {@link Operation}s, retrying each one several times in case of failures.
-     * {@link Operation}s can have defined rollbacks and commits, number of retries etc.
+     * Tries to perform one or more {@link VoidTransaction}s, retrying each one several times in case of failures.
+     * {@link VoidTransaction}s can have defined rollbacks and commits, number of retries etc.
      *
-     * @param operations the operations to perform
+     * @param voidTransactions the transactions to perform
      */
-    public static void atomically(Operation... operations) {
+    public static void atomically(VoidTransaction... voidTransactions) {
         int operationsToRollback = 0;
         try {
-            for (Operation operation : operations) {
+            for (VoidTransaction voidTransaction : voidTransactions) {
                 Unreliable.tenaciusly(() -> {
                     try {
-                        operation.run();
+                        voidTransaction.run();
                     } catch (Exception e) {
-                        operation.performRollback();
+                        voidTransaction.performRollback();
                         throw e;
                     }
-                }, operation.getRetries());
+                }, voidTransaction.getRetries());
                 operationsToRollback++;
             }
         } catch (Exception e) {
             for (int i = 0; i < operationsToRollback; i++) {
-                operations[i].performRollback();
+                voidTransactions[i].performRollback();
             }
             throw new RuntimeException(e);
         }
-        for (Operation operation : operations) {
-            operation.performCommit();
+        for (VoidTransaction voidTransaction : voidTransactions) {
+            voidTransaction.performCommit();
         }
     }
 
+
     /**
-     * Builds a {@link Function} that can have a rollback and/or a commit.
+     * Builds a {@link FunctionalTransaction} that can have a rollback and/or a commit.
      *
      * @param function
      * @param <T>
      * @return
      */
-    public static <T> Function<T> evaluate(SupplierWithException<T> function) {
-        return new Function<T>(function);
+    public static <T> FunctionalTransaction<T> evaluate(SupplierWithException<T> function) {
+        return new FunctionalTransaction<T>(function);
     }
 
+
     /**
-     * Tries to evaluate a {@link Function}, retrying each one several times in case of failures.
-     * {@link Function}s can have defined rollbacks and commits, number of retries etc.
+     * Tries to evaluate a {@link FunctionalTransaction}, retrying each one several times in case of failures.
+     * {@link FunctionalTransaction}s can have defined rollbacks and commits, number of retries etc.
      *
-     * @param function the function to evaluate
+     * @param transaction the transactiontransaction to evaluate
      */
-    public static <T> T atomically(Function<T> function) {
-        T result = prepareAll(function);
-        commitAll(function);
+    public static <T> T atomically(FunctionalTransaction<T> transaction) {
+        T result = prepareAll(transaction);
+        commitAll(transaction);
         return result;
     }
 
 
     /**
-     * Either prepares the function and all its predecessors or throws an exception rolling back
+     * Either prepares the transaction and all its predecessors or throws an exception rolling back
      * the function and all it's predecessors.
      */
-    private static <R, T> T prepareAll(Function<T> f) {
+    private static <R, T> T prepareAll(FunctionalTransaction<T> f) {
         if (f.previous == null) return prepare(f);
 
         f.resultOfPrevious = prepareAll(f.previous);
@@ -93,27 +96,27 @@ public class Transactions {
 
 
     /**
-     * Either prepares this function of rolls back throwing an exception
+     * Either prepares this transaction of rolls back throwing an exception
      */
-    private static <T> T prepare(Function<T> function) {
+    private static <T> T prepare(FunctionalTransaction<T> transaction) {
         return Unreliable.tenaciusly(() -> {
             try {
-                return function.evaluate();
+                return transaction.evaluate();
             } catch (Exception e) {
-                function.performRollback();
+                transaction.performRollback();
                 throw e;
             }
-        }, function.getRetries());
+        }, transaction.getRetries());
     }
 
 
-    private static <R> void rollbackAll(Function<R> f) {
+    private static <R> void rollbackAll(FunctionalTransaction<R> f) {
         if (f.previous != null) rollbackAll(f.previous);
         f.performRollback();
     }
 
 
-    private static <T> void commitAll(Function<T> f) {
+    private static <T> void commitAll(FunctionalTransaction<T> f) {
         if (f.previous != null) commitAll(f.previous);
         f.performCommit();
     }

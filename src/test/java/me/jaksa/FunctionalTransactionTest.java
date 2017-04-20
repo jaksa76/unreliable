@@ -7,7 +7,7 @@ import static me.jaksa.Transactions.evaluate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class FunctionTest {
+public class FunctionalTransactionTest {
     @Test
     public void testFunctionIsRolledBackOnFailure() throws Exception {
         String[] status = new String[] { "init" };

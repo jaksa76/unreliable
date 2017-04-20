@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import static me.jaksa.Transactions.atomically;
 import static me.jaksa.Transactions.evaluate;
+import static me.jaksa.Transactions.perform;
 import static me.jaksa.Unreliable.keepTrying;
 import static me.jaksa.Unreliable.tenaciusly;
 
@@ -36,16 +37,20 @@ public class Examples {
 
     @Test
     public void transactions() throws Exception {
+        UnreliableService service = new UnreliableService();
         Hotel reliableHotel = new Hotel();
         Hotel unreliableHotel = reliableHotel;
         Airline airline = new Airline();
         int maxPrice = 100;
 
+        // there are two types of transactions
+        atomically(perform(() -> service.doSomething())); // void ones
+        String result = atomically(evaluate(() -> service.getSomething())); // ones with a result
+
         // we can specify a rollback function which will be invoked in case of an exception
         Room room = atomically(evaluate(() -> unreliableHotel.bookRoom(getDates()))
                                .withRollback(() -> unreliableHotel.cancelAllBookings())
                                .retry(5)); // and the number of times to retry before giving up
-
 
         // we can also specify a verification function for when we don't rely on exceptions
         // in that case we can also use the variant of the rollback function that accepts the produced value
@@ -53,10 +58,17 @@ public class Examples {
                 .withVerification(r -> r.price() < maxPrice)
                 .withRollback(r -> reliableHotel.cancelBooking(r)));
 
-
         // alternatively we can specify a commit
         Flight flight = atomically(evaluate(() -> airline.reserveFlight(getDates()))
                 .withCommit(f -> airline.confirmReservation(f)));
+
+        // we can also chain transactions
+        Itinerary itinerary = atomically(evaluate(() -> unreliableHotel.bookRoom(getDates()))
+                .then(r -> new Itinerary(r, airline.reserveFlight(r.getDates()))));
+
+        // we can also chain transactions using the 'and' function which wraps the results
+        Pair<Room, Flight> itinerary2 = atomically(evaluate(() -> unreliableHotel.bookRoom(getDates()))
+                .and(r -> airline.reserveFlight(r.getDates())));
     }
 
     private Dates getDates() {
@@ -80,5 +92,9 @@ public class Examples {
     private static class Airline {
         public Flight reserveFlight(Dates dates) { return new Flight(); }
         public void confirmReservation(Flight flight) {}
+    }
+
+    private static class Itinerary {
+        Itinerary(Room room, Flight flight) {}
     }
 }

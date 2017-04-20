@@ -6,7 +6,7 @@ import static me.jaksa.Transactions.perform;
 import static me.jaksa.Transactions.atomically;
 import static org.junit.Assert.*;
 
-public class OperationTest {
+public class VoidTransactionTest {
     @Test
     public void testAllOperationsAreRolledBackOnFailure() throws Exception {
         String[] statuses = new String[] { "init", "init", "init" };
