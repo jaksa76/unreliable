@@ -69,8 +69,8 @@ import me.jaksa.Transactions.*;
 
         // we can specify a rollback function which will be invoked in case of an exception
         Room room = atomically(evaluate(() -> unreliableHotel.bookRoom(getDates()))
-                               .withRollback(() -> unreliableHotel.cancelAllBookings())
-                               .retry(5)); // and the number of times to retry before giving up
+                .withRollback(() -> unreliableHotel.cancelAllBookings())
+                .retry(5)); // and the number of times to retry before giving up
 
         // we can also specify a verification function for when we don't rely on exceptions
         // in that case we can also use the variant of the rollback function that accepts the produced value
