@@ -9,7 +9,7 @@ public class UnreliableTest {
     public void testTryingTwice() throws Exception {
         UnreliableService service = new UnreliableService(2);
 
-        Unreliable.tenaciusly(() -> service.doSomething());
+        Unreliable.tenaciously(() -> service.doSomething());
 
         Assert.assertTrue(service.success);
         Assert.assertEquals(2, service.tries);
@@ -20,7 +20,7 @@ public class UnreliableTest {
     public void testTryingFiveTimes() throws Exception {
         UnreliableService service = new UnreliableService(5);
 
-        Unreliable.tenaciusly(() -> service.doSomething(), 5);
+        Unreliable.tenaciously(() -> service.doSomething(), 5);
 
         Assert.assertTrue(service.success);
         Assert.assertEquals(5, service.tries);
@@ -31,7 +31,7 @@ public class UnreliableTest {
     public void testTryingThreeTimesAndFailing() throws Exception {
         UnreliableService service = new UnreliableService(4);
 
-        Unreliable.tenaciusly(() -> service.doSomething(), 3);
+        Unreliable.tenaciously(() -> service.doSomething(), 3);
     }
 
 
@@ -50,7 +50,7 @@ public class UnreliableTest {
     public void testGettingTwice() throws Exception {
         UnreliableService service = new UnreliableService(2);
 
-        String result = Unreliable.tenaciusly(() -> service.getSomething());
+        String result = Unreliable.tenaciously(() -> service.getSomething());
 
         Assert.assertEquals("Success!", result);
         Assert.assertTrue(service.success);
@@ -62,7 +62,7 @@ public class UnreliableTest {
     public void testGettingFiveTimes() throws Exception {
         UnreliableService service = new UnreliableService(5);
 
-        String result = Unreliable.tenaciusly(() -> service.getSomething(), 5);
+        String result = Unreliable.tenaciously(() -> service.getSomething(), 5);
 
         Assert.assertEquals("Success!", result);
         Assert.assertTrue(service.success);
@@ -74,7 +74,7 @@ public class UnreliableTest {
     public void testGettingThreeTimesAndFailing() throws Exception {
         UnreliableService service = new UnreliableService(4);
 
-        Unreliable.tenaciusly(() -> service.getSomething(), 3);
+        Unreliable.tenaciously(() -> service.getSomething(), 3);
     }
 
 

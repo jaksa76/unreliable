@@ -30,7 +30,7 @@ public class Transactions {
         int operationsToRollback = 0;
         try {
             for (VoidTransaction voidTransaction : voidTransactions) {
-                Unreliable.tenaciusly(() -> {
+                Unreliable.tenaciously(() -> {
                     try {
                         voidTransaction.run();
                     } catch (Exception e) {
@@ -55,9 +55,9 @@ public class Transactions {
     /**
      * Builds a {@link FunctionalTransaction} that can have a rollback and/or a commit.
      *
-     * @param function
-     * @param <T>
-     * @return
+     * @param function the function to evaluate
+     * @param <T> the type of the value to return
+     * @return the value returned by a successful invocation of the function
      */
     public static <T> FunctionalTransaction<T> evaluate(SupplierWithException<T> function) {
         return new FunctionalTransaction<T>(function);
@@ -69,6 +69,8 @@ public class Transactions {
      * {@link FunctionalTransaction}s can have defined rollbacks and commits, number of retries etc.
      *
      * @param transaction the transactiontransaction to evaluate
+     * @param <T> the type of the value to return
+     * @return the value returned by a successful invocation of the function
      */
     public static <T> T atomically(FunctionalTransaction<T> transaction) {
         T result = prepareAll(transaction);
@@ -99,7 +101,7 @@ public class Transactions {
      * Either prepares this transaction of rolls back throwing an exception
      */
     private static <T> T prepare(FunctionalTransaction<T> transaction) {
-        return Unreliable.tenaciusly(() -> {
+        return Unreliable.tenaciously(() -> {
             try {
                 return transaction.evaluate();
             } catch (Exception e) {

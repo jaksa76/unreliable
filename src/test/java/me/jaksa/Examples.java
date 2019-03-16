@@ -15,18 +15,18 @@ public class Examples {
         UnreliableService unreliableService = new UnreliableService();
 
         // this will try to invoke the service 5 times
-        tenaciusly(() -> unreliableService.doSomething(), 5);
+        Unreliable.tenaciously(() -> unreliableService.doSomething(), 5);
 
         // the default number of tries is 3
-        tenaciusly(() -> unreliableService.doSomething());
+        Unreliable.tenaciously(() -> unreliableService.doSomething());
 
         // you can also retrieve values
-        String result = tenaciusly(() -> unreliableService.getSomething());
+        String result = Unreliable.tenaciously(() -> unreliableService.getSomething());
         System.out.println(result);
 
         // if after X times it still fails, a RuntimeException will be thrown
         try {
-            tenaciusly(() -> unreliableService.doSomething(), 2);
+            Unreliable.tenaciously(() -> unreliableService.doSomething(), 2);
         } catch (RuntimeException e) {
             System.out.println("I got tired of trying. Last exception: " + e.getCause().getMessage());
         }

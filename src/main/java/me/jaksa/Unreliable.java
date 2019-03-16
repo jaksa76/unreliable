@@ -1,8 +1,5 @@
 package me.jaksa;
 
-import java.util.List;
-import java.util.function.Supplier;
-
 /**
  * Utility methods to make it easier to work with unreliable components
  */
@@ -49,8 +46,8 @@ public class Unreliable {
      *
      * @throws RuntimeException if the action fails three times.
      */
-    public static void tenaciusly(RunnableWithException r) {
-        tenaciusly(r, 3);
+    public static void tenaciously(RunnableWithException r) {
+        tenaciously(r, 3);
     }
 
 
@@ -63,8 +60,8 @@ public class Unreliable {
      *
      * @throws RuntimeException if the action fails the specified number of times.
      */
-    public static void tenaciusly(RunnableWithException r, int times) {
-        tenaciusly(() -> {
+    public static void tenaciously(RunnableWithException r, int times) {
+        tenaciously(() -> {
             r.run();
             return true; // return anything
         }, times);
@@ -82,8 +79,8 @@ public class Unreliable {
      *
      * @throws RuntimeException if the function fails three times.
      */
-    public static <T> T tenaciusly(SupplierWithException<T> s) {
-        return tenaciusly(s, 3);
+    public static <T> T tenaciously(SupplierWithException<T> s) {
+        return tenaciously(s, 3);
     }
 
 
@@ -100,7 +97,7 @@ public class Unreliable {
      *
      * @throws RuntimeException if the function fails the specified number of times.
      */
-    public static <T> T tenaciusly(SupplierWithException<T> s, int times) {
+    public static <T> T tenaciously(SupplierWithException<T> s, int times) {
         boolean success = true;
         int tries = 0;
         Exception lastException = null;

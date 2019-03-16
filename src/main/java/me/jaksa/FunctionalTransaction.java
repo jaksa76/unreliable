@@ -40,6 +40,7 @@ public class FunctionalTransaction<T> {
     /**
      * Constructs a lightweight transaction chained to a previous one.
      *
+     * @param <I> the input type of the function
      * @param function the function to evaluate.
      * @param previous the {@link FunctionalTransaction} to attach to
      */
