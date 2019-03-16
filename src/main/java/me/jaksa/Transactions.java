@@ -83,7 +83,7 @@ public class Transactions {
      * Either prepares the transaction and all its predecessors or throws an exception rolling back
      * the function and all it's predecessors.
      */
-    private static <R, T> T prepareAll(FunctionalTransaction<T> f) {
+    static <R, T> T prepareAll(FunctionalTransaction<T> f) {
         if (f.previous == null) return prepare(f);
 
         f.resultOfPrevious = prepareAll(f.previous);
@@ -112,13 +112,13 @@ public class Transactions {
     }
 
 
-    private static <R> void rollbackAll(FunctionalTransaction<R> f) {
+    static <R> void rollbackAll(FunctionalTransaction<R> f) {
         if (f.previous != null) rollbackAll(f.previous);
         f.performRollback();
     }
 
 
-    private static <T> void commitAll(FunctionalTransaction<T> f) {
+    static <T> void commitAll(FunctionalTransaction<T> f) {
         if (f.previous != null) commitAll(f.previous);
         f.performCommit();
     }

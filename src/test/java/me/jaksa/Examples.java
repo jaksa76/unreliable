@@ -2,6 +2,7 @@ package me.jaksa;
 
 import org.junit.Test;
 
+import static me.jaksa.LongTransactions.*;
 import static me.jaksa.Transactions.*;
 import static me.jaksa.Unreliable.keepTrying;
 
@@ -68,6 +69,72 @@ public class Examples {
                 .and(r -> airline.reserveFlight(r.getDates())));
     }
 
+    @Test
+    public void longTransactions() throws Exception {
+        Hotel reliableHotel = new Hotel();
+        Hotel unreliableHotel = reliableHotel;
+        Airline airline = new Airline();
+
+        longTransaction(() -> {
+            Room room = transactionally(evaluate(() -> unreliableHotel.bookRoom(getDates()))
+                    .withRollback(r -> reliableHotel.cancelBooking(r)));
+
+            Flight flight = transactionally(evaluate(() -> airline.reserveFlight(room.getDates()))
+                    .withCommit(f -> airline.confirmReservation(f)));
+
+            // operations that can abort everything but have no confirm or rollback should be performed last
+            printItinerary(room, flight);
+        });
+    }
+
+    @Test
+    public void longTransactions2() throws Exception {
+        Hotel reliableHotel = new Hotel();
+        Hotel unreliableHotel = reliableHotel;
+        Airline airline = new Airline();
+
+        try (LongTransaction tx = beginTx()) {
+            Room room = transactionally(evaluate(() -> unreliableHotel.bookRoom(getDates()))
+                    .withRollback(r -> reliableHotel.cancelBooking(r)));
+
+            Flight flight = transactionally(evaluate(() -> airline.reserveFlight(room.getDates()))
+                    .withCommit(f -> airline.confirmReservation(f)));
+
+            // participant that can abort everything but has no confirm or rollback
+            printItinerary(room, flight);
+        }  catch (PrintingProblem e) {
+            rollbackTx();
+        }
+    }
+
+    @Test
+    public void longTransactions3() throws Exception {
+        Hotel reliableHotel = new Hotel();
+        Hotel unreliableHotel = reliableHotel;
+        Airline airline = new Airline();
+
+        try {
+            beginTx();
+
+            Room room = transactionally(evaluate(() -> unreliableHotel.bookRoom(getDates()))
+                    .withRollback(r -> reliableHotel.cancelBooking(r)));
+
+            Flight flight = transactionally(evaluate(() -> airline.reserveFlight(room.getDates()))
+                    .withCommit(f -> airline.confirmReservation(f)));
+
+            // participant that can abort everything but has no confirm or rollback
+            printItinerary(room, flight);
+
+            commitTx();
+        } catch (PrintingProblem e) {
+            rollbackTx();
+        }
+    }
+
+    private void printItinerary(Room room, Flight flight) throws PrintingProblem { }
+
+    private boolean askUserToConfirm() { return false; }
+
     private Dates getDates() {
         return new Dates();
     }
@@ -94,4 +161,6 @@ public class Examples {
     private static class Itinerary {
         Itinerary(Room room, Flight flight) {}
     }
+
+    private static class PrintingProblem extends Exception { }
 }
