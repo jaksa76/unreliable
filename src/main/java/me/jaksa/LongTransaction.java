@@ -8,7 +8,7 @@ class LongTransaction implements AutoCloseable {
 
     // TODO add state management and checks for correct usage
 
-    public <T> void addStep(FunctionalTransaction<T> transaction) {
+    public <T> void transactionally(FunctionalTransaction<T> transaction) {
         steps.add(transaction);
     }
 
