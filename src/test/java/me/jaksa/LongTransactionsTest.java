@@ -106,7 +106,36 @@ public class LongTransactionsTest {
         assertEquals(0, counters[5]);
     }
 
-    private void throwException() {
+    @Test
+    public void testRollbackWithSubStepsExceptionFromWithin() throws Exception {
+        int[] counters = new int[6];
+
+        longTransaction(() -> {
+            transactionally(evaluate(() -> counters[0]++)
+                    .withRollback(val -> counters[0]--)
+                    .and(val -> counters[1]++)
+                    .withRollback(val -> counters[1]--));
+
+            transactionally(evaluate(() -> counters[2]++)
+                    .withRollback(val -> counters[2]--)
+                    .then(val -> counters[3]++)
+                    .withRollback(val -> counters[3]--)
+                    .then(val -> throwException())
+                    .withRollback(val -> counters[4] = 0));
+
+            transactionally(evaluate(() -> counters[5]++)
+                    .withCommit(val -> counters[5]++));
+        });
+
+        assertEquals(0, counters[0]);
+        assertEquals(0, counters[1]);
+        assertEquals(0, counters[2]);
+        assertEquals(0, counters[3]);
+        assertEquals(0, counters[4]);
+        assertEquals(0, counters[5]);
+    }
+
+    private int throwException() {
         throw new RuntimeException();
     }
 }
