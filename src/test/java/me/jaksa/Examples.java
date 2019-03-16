@@ -2,11 +2,8 @@ package me.jaksa;
 
 import org.junit.Test;
 
-import static me.jaksa.Transactions.atomically;
-import static me.jaksa.Transactions.evaluate;
-import static me.jaksa.Transactions.perform;
+import static me.jaksa.Transactions.*;
 import static me.jaksa.Unreliable.keepTrying;
-import static me.jaksa.Unreliable.tenaciusly;
 
 public class Examples {
 
