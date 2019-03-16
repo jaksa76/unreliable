@@ -36,11 +36,11 @@ public class LongTransactionsTest {
         longTransaction(() -> {
             transactionally(evaluate(() -> counters[0]++)
                     .withCommit(val -> counters[0]++)
-                    .withRollback(val -> counters[0]--));
+                    .withRollback(val -> counters[0]=0));
 
             transactionally(evaluate(() -> counters[1]++)
                     .withCommit(val -> counters[1]++)
-                    .withRollback(val -> counters[1]--));
+                    .withRollback(val -> counters[1]=0));
 
             throwException();
 
@@ -60,12 +60,12 @@ public class LongTransactionsTest {
         longTransaction(() -> {
             transactionally(evaluate(() -> counters[0]++)
                     .withCommit(val -> counters[0]++)
-                    .withRollback(val -> counters[0]--));
+                    .withRollback(val -> counters[0]=0));
 
             transactionally(evaluate(() -> counters[1]++)
                     .withVerification(val -> false) // this will make the transaction fail
                     .withCommit(val -> counters[1]++)
-                    .withRollback(val -> counters[1]--));
+                    .withRollback(val -> counters[1]=0));
 
             transactionally(evaluate(() -> counters[2]++)
                     .withCommit(val -> counters[2]++));
@@ -82,17 +82,17 @@ public class LongTransactionsTest {
 
         longTransaction(() -> {
             transactionally(evaluate(() -> counters[0]++)
-                    .withRollback(val -> counters[0]--)
+                    .withRollback(val -> counters[0] = 0)
                 .and(val -> counters[1]++)
-                    .withRollback(val -> counters[1]--));
+                    .withRollback(val -> counters[1]=0));
 
             transactionally(evaluate(() -> counters[2]++)
-                    .withRollback(val -> counters[2]--)
+                    .withRollback(val -> counters[2]=0)
                 .then(val -> counters[3]++)
-                    .withRollback(val -> counters[3]--)
+                    .withRollback(val -> counters[3]=0)
                 .then(val -> counters[4]++)
                     .withVerification(val -> false)
-                    .withRollback(val -> counters[4]--));
+                    .withRollback(val -> counters[4]=0));
 
             transactionally(evaluate(() -> counters[5]++)
                     .withCommit(val -> counters[5]++));
@@ -112,14 +112,14 @@ public class LongTransactionsTest {
 
         longTransaction(() -> {
             transactionally(evaluate(() -> counters[0]++)
-                    .withRollback(val -> counters[0]--)
+                    .withRollback(val -> counters[0]=0)
                     .and(val -> counters[1]++)
-                    .withRollback(val -> counters[1]--));
+                    .withRollback(val -> counters[1]=0));
 
             transactionally(evaluate(() -> counters[2]++)
-                    .withRollback(val -> counters[2]--)
+                    .withRollback(val -> counters[2]=0)
                     .then(val -> counters[3]++)
-                    .withRollback(val -> counters[3]--)
+                    .withRollback(val -> counters[3]=0)
                     .then(val -> throwException())
                     .withRollback(val -> counters[4] = 0));
 
