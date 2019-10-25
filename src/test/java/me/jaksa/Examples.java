@@ -2,6 +2,8 @@ package me.jaksa;
 
 import org.junit.Test;
 
+import java.net.SocketTimeoutException;
+
 import static me.jaksa.LongTransactions.*;
 import static me.jaksa.Transactions.*;
 import static me.jaksa.Unreliable.keepTrying;
@@ -31,6 +33,9 @@ public class Examples {
 
         // or keep trying an infinite number of times
         keepTrying(() -> unreliableService.doSomething());
+
+        // ignore only certain exceptions
+        Unreliable.retryOn(SocketTimeoutException.class, () -> unreliableService.doSomething());
     }
 
     @Test

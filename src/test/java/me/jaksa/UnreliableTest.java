@@ -3,16 +3,29 @@ package me.jaksa;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import static java.util.Arrays.asList;
+import static me.jaksa.Unreliable.keepTrying;
+import static me.jaksa.Unreliable.retryOn;
+import static me.jaksa.Unreliable.tenaciously;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class UnreliableTest {
 
     @Test
     public void testTryingTwice() throws Exception {
         UnreliableService service = new UnreliableService(2);
 
-        Unreliable.tenaciously(() -> service.doSomething());
+        tenaciously(() -> service.doSomething());
 
-        Assert.assertTrue(service.success);
-        Assert.assertEquals(2, service.tries);
+        assertTrue(service.success);
+        assertEquals(2, service.tries);
     }
 
 
@@ -20,10 +33,10 @@ public class UnreliableTest {
     public void testTryingFiveTimes() throws Exception {
         UnreliableService service = new UnreliableService(5);
 
-        Unreliable.tenaciously(() -> service.doSomething(), 5);
+        tenaciously(() -> service.doSomething(), 5);
 
-        Assert.assertTrue(service.success);
-        Assert.assertEquals(5, service.tries);
+        assertTrue(service.success);
+        assertEquals(5, service.tries);
     }
 
 
@@ -31,7 +44,7 @@ public class UnreliableTest {
     public void testTryingThreeTimesAndFailing() throws Exception {
         UnreliableService service = new UnreliableService(4);
 
-        Unreliable.tenaciously(() -> service.doSomething(), 3);
+        tenaciously(() -> service.doSomething(), 3);
     }
 
 
@@ -39,10 +52,10 @@ public class UnreliableTest {
     public void testTrying100Times() {
         UnreliableService service = new UnreliableService(100);
 
-        Unreliable.keepTrying(() -> service.doSomething());
+        keepTrying(() -> service.doSomething());
 
-        Assert.assertTrue(service.success);
-        Assert.assertEquals(100, service.tries);
+        assertTrue(service.success);
+        assertEquals(100, service.tries);
     }
 
 
@@ -50,11 +63,11 @@ public class UnreliableTest {
     public void testGettingTwice() throws Exception {
         UnreliableService service = new UnreliableService(2);
 
-        String result = Unreliable.tenaciously(() -> service.getSomething());
+        String result = tenaciously(() -> service.getSomething());
 
-        Assert.assertEquals("Success!", result);
-        Assert.assertTrue(service.success);
-        Assert.assertEquals(2, service.tries);
+        assertEquals("Success!", result);
+        assertTrue(service.success);
+        assertEquals(2, service.tries);
     }
 
 
@@ -62,11 +75,11 @@ public class UnreliableTest {
     public void testGettingFiveTimes() throws Exception {
         UnreliableService service = new UnreliableService(5);
 
-        String result = Unreliable.tenaciously(() -> service.getSomething(), 5);
+        String result = tenaciously(() -> service.getSomething(), 5);
 
-        Assert.assertEquals("Success!", result);
-        Assert.assertTrue(service.success);
-        Assert.assertEquals(5, service.tries);
+        assertEquals("Success!", result);
+        assertTrue(service.success);
+        assertEquals(5, service.tries);
     }
 
 
@@ -74,7 +87,7 @@ public class UnreliableTest {
     public void testGettingThreeTimesAndFailing() throws Exception {
         UnreliableService service = new UnreliableService(4);
 
-        Unreliable.tenaciously(() -> service.getSomething(), 3);
+        tenaciously(() -> service.getSomething(), 3);
     }
 
 
@@ -82,10 +95,59 @@ public class UnreliableTest {
     public void testGetting100Times() {
         UnreliableService service = new UnreliableService(100);
 
-        String result = Unreliable.keepTrying(() -> service.getSomething());
+        String result = keepTrying(() -> service.getSomething());
 
-        Assert.assertEquals("Success!", result);
-        Assert.assertTrue(service.success);
-        Assert.assertEquals(100, service.tries);
+        assertEquals("Success!", result);
+        assertTrue(service.success);
+        assertEquals(100, service.tries);
     }
+
+
+    @Test
+    public void testRetryingOnSpecificException() {
+        UnreliableService service = new UnreliableService(new FileNotFoundException(), 3);
+
+        String result = retryOn(IOException.class, () -> service.getSomething());
+
+        assertEquals("Success!", result);
+        assertTrue(service.success);
+        assertEquals(3, service.tries);
+    }
+
+
+    @Test
+    public void testRetryingOnSpecificExceptionAndFail() {
+        UnreliableService service = new UnreliableService(new FileNotFoundException(), 4);
+        try {
+            retryOn(IOException.class, () -> service.doSomething());
+            fail("should have thrown a wrapped FileNotFoundException");
+        } catch (RuntimeException e) {
+            assertEquals(FileNotFoundException.class, e.getCause().getClass());
+            assertEquals(3, service.tries);
+        }
+    }
+
+
+    @Test
+    public void testThrowingDifferentException() {
+        UnreliableService service = new UnreliableService(new NullPointerException(), 4);
+        try {
+            retryOn(IOException.class, () -> service.doSomething());
+            fail("should have thrown a NullPointerException");
+        } catch (NullPointerException e) {
+            assertEquals(1, service.tries);
+        }
+    }
+
+    @Test
+    public void testRetryingOnOneOfSpecifiedExceptions() {
+        UnreliableService service = new UnreliableService(new FileNotFoundException(), 10);
+
+        List<Class> ignoredExceptions = asList(NullPointerException.class, IOException.class);
+        retryOn(ignoredExceptions, () -> service.doSomething(), 10);
+
+        assertTrue(service.success);
+        assertEquals(10, service.tries);
+    }
+
 }
