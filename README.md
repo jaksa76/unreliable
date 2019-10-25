@@ -10,13 +10,13 @@ Maven:
 <dependency>
     <groupId>me.jaksa</groupId>
     <artifactId>unreliable</artifactId>
-    <version>1.0</version>
+    <version>2.1</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile group: 'me.jaksa', name: 'unreliable', version: '1.0'
+compile group: 'me.jaksa', name: 'unreliable', version: '2.1'
 ```
 
 ## Basics
@@ -45,6 +45,9 @@ import me.jaksa.Unreliable.*;
 
         // or keep trying an infinite number of times
         keepTrying(() -> unreliableService.doSomething());
+        
+        // ignore only certain exceptions
+        Unreliable.retryOn(SocketTimeoutException.class, () -> unreliableService.doSomething());
 ```
 
 
