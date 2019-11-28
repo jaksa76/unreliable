@@ -22,32 +22,38 @@ compile group: 'me.jaksa', name: 'unreliable', version: '2.1'
 ## Basics
 
 ```java
-import me.jaksa.Unreliable.*;
+import static me.jaksa.Unreliable.RetryParam.*;
+import static me.jaksa.Unreliable.retry;
 ```
 
 ```java
+        UnreliableService unreliableService = new UnreliableService();
+
         // this will try to invoke the service 5 times
-        Unreliable.tenaciously(() -> unreliableService.doSomething(), 5);
+        retry(() -> unreliableService.doSomething(), times(5));
+
+        // this will wait 100ms between retries
+        retry(() -> unreliableService.doSomething(), times(2), interval(100));
 
         // the default number of tries is 3
-        Unreliable.tenaciously(() -> unreliableService.doSomething());
+        retry(() -> unreliableService.doSomething());
 
         // you can also retrieve values
-        String result = Unreliable.tenaciously(() -> unreliableService.getSomething());
+        String result = retry(() -> unreliableService.getSomething());
         System.out.println(result);
 
         // if after X times it still fails, a RuntimeException will be thrown
         try {
-            Unreliable.tenaciously(() -> unreliableService.doSomething(), 2);
+            retry(() -> unreliableService.doSomething(), times(2));
         } catch (RuntimeException e) {
             System.out.println("I got tired of trying. Last exception: " + e.getCause().getMessage());
         }
 
         // or keep trying an infinite number of times
-        keepTrying(() -> unreliableService.doSomething());
-        
+        retry(() -> unreliableService.doSomething(), infinitely());
+
         // ignore only certain exceptions
-        Unreliable.retryOn(SocketTimeoutException.class, () -> unreliableService.doSomething());
+        retry(() -> unreliableService.doSomething(), on(SocketTimeoutException.class));
 ```
 
 
